@@ -10,7 +10,7 @@ from pandas.api.types import is_numeric_dtype, is_object_dtype
 ## a tab to display full corpus? or pre-loaded charts of each corpus?
 ## example uses
 ## allow for more conditions during search (e.g. genre, duration slider)
-## 
+## allow for stacking / scattering of search terms if there are multiples
 
 
 custom_table = {
@@ -234,9 +234,8 @@ def server(input, output, session):
             title = f'Histogram of {x_col} for search-input {input.search_term()} from {input.dates()[0]} to {input.dates()[1]}'
 
             if is_object_dtype(xtype):
-                grp = pd.DataFrame(df[x_col].unique(), columns=x_col).\
-                        merge(df.groupby(x_col).size().reset_index(name='num_' + str(x_col)), on=[x_col])
-                return px.histogram(grp, x='num_'+ x_col, template=template, title=title)
+                grp = df.groupby(x_col).size().reset_index(name='num_' + str(x_col)).sort_values(by='num_'+x_col, ascending=False)
+                return px.bar(grp, x=x_col, y='num_'+ x_col, template=template, title=title)
             else: return px.histogram(df, x=x_col, template=template, title=title)
 
     @output
