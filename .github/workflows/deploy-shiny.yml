@@ -1,0 +1,33 @@
+name: Deploy to ShinyApps
+
+on:
+  push:
+    branches:
+      - main  # Adjust if your default branch has a different name
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.8.6rc1
+
+      - name: Install dependencies
+        run: |
+          pip install rsconnect  # Install rsconnect package
+          pip install -r requirements.txt  # Install app dependencies
+
+      - name: Deploy to ShinyApps
+        env:
+          RS_CONNECT_ACCOUNT: ${{ secrets.RS_CONNECT_ACCOUNT }}
+          RS_CONNECT_NAME: ${{ secrets.RS_CONNECT_NAME }}
+          RS_CONNECT_TOKEN: ${{ secrets.RS_CONNECT_TOKEN }}
+          RS_CONNECT_SECRET: ${{ secrets.RS_CONNECT_SECRET }}
+        run: |
+          rsconnect add --account $RS_CONNECT_ACCOUNT --name $RS_CONNECT_NAME --token $RS_CONNECT_TOKEN --secret $RS_CONNECT_SECRET
+          rsconnect deploy shiny --app-directory "." --name jackewiebohne --title genocide  # Adjust parameters as needed
