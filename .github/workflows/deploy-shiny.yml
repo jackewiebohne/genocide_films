@@ -3,11 +3,12 @@ name: Deploy to ShinyApps
 on:
   push:
     branches:
-      - main  # Adjust if your default branch has a different name
+      - main
 
 jobs:
   deploy:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -15,13 +16,21 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
-          python-version: '3.9'  # Adjust to match the version you developed with
+          python-version: '3.9'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libcython-dev
 
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install rsconnect  # Install rsconnect package
-          pip install -r requirements.txt  # Install app dependencies
+          pip install --upgrade pip
+          pip install numpy==1.19.2 pandas==1.1.2 plotly==5.23.0 shinyswatch==0.7.0 shinywidgets==0.3.3
+
+      - name: Install rsconnect
+        run: |
+          pip install rsconnect
 
       - name: Deploy to ShinyApps
         env:
@@ -31,4 +40,4 @@ jobs:
           RS_CONNECT_SECRET: ${{ secrets.RS_CONNECT_SECRET }}
         run: |
           rsconnect add --account $RS_CONNECT_ACCOUNT --name $RS_CONNECT_NAME --token $RS_CONNECT_TOKEN --secret $RS_CONNECT_SECRET
-          rsconnect deploy shiny --app-directory "." --name jackewiebohne --title genocide  # Adjust parameters as needed
+          rsconnect deploy shiny --app-directory "." --name jackewiebohne --title genocide
