@@ -2,7 +2,8 @@ from shiny import App, ui, reactive, render
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from shinywidgets import output_widget, render_widget  
+from shinywidgets import output_widget, render_widget 
+from shinyswatch import theme
 from yvcdh_handler import yvcdh_handler
 from pandas.api.types import is_numeric_dtype, is_object_dtype
 ## TODO:
@@ -20,15 +21,25 @@ custom_table = {
     }
 }
 
+
 app_ui = ui.page_fluid(
     # ui.tags.head(
     #     ui.tags.link(rel="stylesheet", href="styles.css") ## create style sheet to be imported
-    # ),
+    # ), 
     ui.navset_bar(
-        ui.nav_panel('Explanation', 'Nothing yet'), ## add explanation html file to be imported
+        ui.nav_panel('Explanation', 
+            ui.markdown('**More explanation will follow.**\
+                <br>Currently only the documentaries in the filmographies of Yad Vashem and Cinematography of the Holocaust can be searched and graphed.\
+                <br>A full search of these filmographies (scraped from the above websites) regardless of genre will be possible once data cleaning is finished.\
+                <br>My own hand-curated set of documentaries on genocide more generally will also be made available soon.\
+                <br>Semantic similarity searches (using trained vector libraries) will also be made available and custom graphing for these will allow for unique\
+                <br>data visualisations (e.g. clustering of film-vectors by genre, director, specific search terms, changes of vectors over time etc.) will also be possible soon.'\
+            ) ## add explanation html file to be imported
+        ),
         ui.nav_panel('Instructions', 
             ui.markdown(
-                "**Instructions**: Here you can search different documentary filmographies on the Holocaust or genocide more generally.\
+                "**Instructions**:<br>You can search the tables for single words. If you want to search for two words in any given row you can chain them together like so: hitler|himmler.\
+                <br>The search syntax follows Python's Regular Expressions. For more info on complex searches, see:<br>[Python regex](https://docs.python.org/3/howto/regex.html)\
                 \
                 " ## add instruction texts: tell about complex regex searches and give link to further info
             )
@@ -39,7 +50,7 @@ app_ui = ui.page_fluid(
         ui.nav_panel('Hand-curated genocide documentary filmography', 'Nothing yet'),
             # ui.output_ui('my_corp_ui')
         title='Explore and Chart Production Data of Documentaries on the Holocaust and Genocide'
-    )
+    ), theme=theme.cyborg
 )
 
 
@@ -101,7 +112,6 @@ def server(input, output, session):
     def plot():
         df = filtered_df()
         if df.empty:
-            print('empty')
             fig = go.Figure()
             fig.add_annotation(
                 text="No data to plot.",
