@@ -1,0 +1,5 @@
+numpy==1.19.2
+pandas==1.1.2
+plotly==5.23.0
+shinyswatch==0.7.0
+shinywidgets==0.3.3
