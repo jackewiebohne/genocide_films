@@ -14,9 +14,7 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v3
-        with:
-          python-version: 3.8.6rc1
-
+        
       - name: Install dependencies
         run: |
           pip install rsconnect  # Install rsconnect package
