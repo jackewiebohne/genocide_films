@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "C:\\Users\\jackewiebohne\\Downloads\\shiny",
+        "app_url": "https://jackewiebohne.shinyapps.io/shiny/",
+        "app_id": 12533390,
+        "app_guid": null,
+        "title": "shiny",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}

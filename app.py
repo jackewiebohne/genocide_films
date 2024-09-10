@@ -14,25 +14,26 @@ logging.basicConfig(level=logging.DEBUG)
 
 ### TODO
 ## a tab to display full corpus? or pre-loaded charts of each corpus?
-## example uses
+## show some example uses
 ## allow for more conditions during search (e.g. genre)
 ## allow for stacking / scattering of search terms if there are multiples
 
 
-custom_table = {
-    'style': {
-        "width": '50%',
-        'font-size':'11px',
-        'box-shadow': '0 1px 2px rgba(0,0,0,0.1)'
-    }
-}
-
-
 app_ui = ui.page_fluid(
-    # ui.tags.head(
-    #     ui.tags.link(rel="stylesheet", href="styles.css") ## create style sheet to be imported
-    # ), 
-    ui.navset_bar(
+    ui.tags.head(
+        ui.tags.style(
+            """
+            .navbar {
+                flex-wrap: wrap !important;
+                position: relative !important; /* Prevent overlap */
+            }
+            .content-area {
+                padding-top: 60px !important; /* Adjust depending on navbar height */
+            }
+            """
+        )
+    ),
+    ui.page_navbar(
         ui.nav_panel('Explanation', 
             ui.markdown('**More explanation will follow.**\
                 <br>Filmographies of Yad Vashem and the Cinematography of the Holocaust as well as a hand-curated dataset of genocide doucmentaries can be searched and graphed.\
@@ -49,42 +50,63 @@ app_ui = ui.page_fluid(
             )
         ),
         ui.nav_panel('Hand-curated genocide documentary filmography',
-            ui.output_ui('mycorp_ui_output'), value='mycorp' # mycorp_ui
+            ui.output_ui('mycorp_ui_output'), 
+            value='mycorp',
         ),
 
         ui.nav_panel('Yad Vashem and Cinematography of the Holocaust filmographies', 
-            ui.output_ui('yvcdh_ui_output'), value='yvcdh' # yvcdh_ui
+            ui.output_ui('yvcdh_ui_output'),
+            value='yvcdh',
         ),
+        ui.nav_panel('Graph Search Output',
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.input_radio_buttons(
+                        "plot_choices", "Choose a plot option:", 
+                        choices={"line": "Line-Graph", "histogram": "Histogram",'heatmap':"Heatmap", "stacked": "Stacked-Area Chart", 'scatter':'scatter'}
+                    ),
+                    ui.output_ui('cond_radio_plot_choices'),
+                    ui.input_action_button("plot_button", "Plot"), 
+                    position='right'
+                ),
+                output_widget("plot")
+            )
+        ),       
 
         id='active_nav',
-        title='Explore and Chart Production Data of Documentaries on the Holocaust and Genocide'
+        title='Explore and Chart Production Data of Documentaries on the Holocaust and Genocide',
+        collapsible=True,
+        position='fixed-top'
     ), theme=theme.cyborg
 )
 
 
 def server(input, output, session):
 
-    cur_df = reactive.Value(None)
+    cur_df = reactive.Value({'mycorp':pd.DataFrame(), 'yvcdh':pd.DataFrame()})
     filtered_df = reactive.Value(pd.DataFrame())
     search_performed = reactive.Value(False)
 
     @output
     @render.ui
+    @reactive.event(input.active_nav)
     def yvcdh_ui_output():
         logging.debug(f'rendering yvcdh')
-        return yvcdh_ui(cur_df)
+        return yvcdh_ui(cur_df, filtered_df, search_performed) 
 
     @output
     @render.ui
+    @reactive.event(input.active_nav)
     def mycorp_ui_output():
         logging.debug(f'rendering mycorp')
-        return mycorp_ui(cur_df)
-    
-    
+        return mycorp_ui(cur_df, filtered_df, search_performed) 
+
     @reactive.effect
     @reactive.event(input.search)
+    @reactive.event(input.active_nav)
     def perform_search():
-        logging.debug(f'performing search on {cur_df().__name__}')
+        active_nav = input.active_nav()
+        logging.debug(f'performing search on {cur_df()[active_nav].__name__}')
         search_term = input.search_term()
         search_column = input.search_column()
         date_range = input.dates()
@@ -94,7 +116,7 @@ def server(input, output, session):
         duration = list(range(int(duration_range[0]), int(duration_range[1])))
         dates = list(range(int(date_range[0]), int(date_range[1]) + 1))
         
-        result = cur_df().search(
+        result = cur_df()[active_nav].search(
             searchinput=search_term,
             search_col=search_column,
             dates=dates,
@@ -106,25 +128,13 @@ def server(input, output, session):
         search_performed.set(True)
         search_df_name =  'mycorp' if 'DATE' in filtered_df().columns else 'yvcdh'
         logging.debug(f'search successfully performed on {search_df_name}')
-        ui.output_data_frame('table')
-        
-    @output
-    @render.data_frame
-    def table():
-        if not search_performed():
-            return pd.DataFrame(columns=["Perform a search"]) # return text value instead of table?
-        elif filtered_df().empty:
-            return pd.DataFrame(columns=["No results found"])
-        else:
-            search_df_name = 'mycorp' if 'DATE' in filtered_df().columns else 'yvcdh'
-            logging.debug(f'df {search_df_name} passed to table rendering function')
-            return render.DataTable(filtered_df(), styles=custom_table)
 
 
     @output
     @render_widget
     @reactive.event(input.plot_button)
     def plot():
+
         df = filtered_df()
         if df.empty:
             fig = go.Figure()
@@ -146,6 +156,7 @@ def server(input, output, session):
         x_col = input.x_input()
         xtype = df[x_col].dtypes
         template = 'seaborn'
+        logging.debug(f'plotting search with choice {plot_type}')
 
         # configure df when a categorical data column has been used for numerical axes
         if plot_type in ('line', 'heatmap'):
@@ -256,36 +267,40 @@ def server(input, output, session):
     @output
     @render.ui
     def cond_radio_plot_choices():
-        input_df = filtered_df()
-        rchoice = input.plot_choices()
-        common_select_out = [ui.input_select('x_input', 'If a non-numerical axis is chosen (e.g. \"summary\"), it will count the elements of this axis. Select x-axis:', 
-                    choices=[c for c in input_df.columns], selected=cur_df().timeaxis),
-                    ui.input_select('y_input', 'Select y-axis', choices=[c for c in input_df.columns])
-                    ]
-        
-        if input_df.empty:
-            return ui.card('Nothing to plot. Perform a search first')
-        
-        elif rchoice == 'line':
-            return common_select_out
-        
-        elif rchoice == 'histogram':
-            return [ui.input_select('x_input', 'If a non-numerical axis is chosen (e.g. \"summary\"), it will count the elements of this axis. Select x-axis:', 
-                    choices=[c for c in input_df.columns], selected=cur_df().timeaxis)]
-        
-        elif rchoice == 'heatmap':
-            return common_select_out
-        
-        elif rchoice == 'stacked':
-            return common_select_out + \
-                    [ui.input_select('z_input', 'Select third display value (used for stacking)', choices=[c for c in input_df.columns])]
-        
-        elif rchoice == 'scatter':
-            return common_select_out + \
-                    [ui.input_select('z_input', 'Select third display value (used for color)', choices=[c for c in input_df.columns] + ['none'], selected='none'),
-                    ui.input_select('w_input', 'Select fourth display value (used for size of scatter dots)', choices= cur_df().numeric_axes + ['none'], # has to be numeric 
-                    selected='none')
-                    ]
+        active_nav = 'mycorp' if 'DATE' in filtered_df().columns else 'yvcdh'
+        if not isinstance(cur_df().get(active_nav), pd.DataFrame):
+            input_df = filtered_df()
+            rchoice = input.plot_choices()
+            common_select_out = [ui.input_select('x_input', 'If a non-numerical axis is chosen (e.g. \"summary\"), it will count the elements of this axis. Select x-axis:', 
+                        choices=[c for c in input_df.columns], selected=cur_df()[active_nav].timeaxis),
+                        ui.input_select('y_input', 'Select y-axis', choices=[c for c in input_df.columns])
+                        ]
+            logging.debug(f'radio choices based on active nav {active_nav} with radio choice {rchoice}')
+            
+            if input_df.empty:
+                return ui.card('Nothing to plot. Perform a search first')
+            
+            elif rchoice == 'line':
+                return common_select_out
+            
+            elif rchoice == 'histogram':
+                return [ui.input_select('x_input', 'If a non-numerical axis is chosen (e.g. \"summary\"), it will count the elements of this axis. Select x-axis:', 
+                        choices=[c for c in input_df.columns], selected=cur_df()[active_nav].timeaxis)]
+            
+            elif rchoice == 'heatmap':
+                return common_select_out
+            
+            elif rchoice == 'stacked':
+                return common_select_out + \
+                        [ui.input_select('z_input', 'Select third display value (used for stacking)', choices=[c for c in input_df.columns])]
+            
+            elif rchoice == 'scatter':
+                return common_select_out + \
+                        [ui.input_select('z_input', 'Select third display value (used for color)', choices=[c for c in input_df.columns] + ['none'], selected='none'),
+                        ui.input_select('w_input', 'Select fourth display value (used for size of scatter dots)', choices= cur_df()[active_nav].numeric_axes + ['none'], # has to be numeric 
+                        selected='none')
+                        ]
+        else: return ui.markdown('Perform a Search First')
 
 
     ## TODO!
@@ -295,6 +310,5 @@ def server(input, output, session):
 
 app = App(app_ui, server)
 
-# To run the app, ensure this script is executed directly
 if __name__ == "__main__":
     app.run()
