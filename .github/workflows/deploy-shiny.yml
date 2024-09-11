@@ -30,10 +30,18 @@ jobs:
       run: |
         pip install rsconnect-python
 
-    - name: Add rsconnect account
+    - name: Delete existing app
+      env:
+        RS_CONNECT_TOKEN: ${{ secrets.RS_CONNECT_TOKEN }}
+        RS_CONNECT_SECRET: ${{ secrets.RS_CONNECT_SECRET }}
       run: |
         rsconnect add --account ${{ secrets.RS_CONNECT_ACCOUNT }} --name ${{ secrets.RS_CONNECT_NAME }} --token ${{ secrets.RS_CONNECT_TOKEN }} --secret ${{ secrets.RS_CONNECT_SECRET }}
+        rsconnect remove shiny --name ${{ secrets.RS_CONNECT_NAME }} --account ${{ secrets.RS_CONNECT_ACCOUNT }} || true
 
     - name: Deploy to ShinyApps.io
+      env:
+        RS_CONNECT_TOKEN: ${{ secrets.RS_CONNECT_TOKEN }}
+        RS_CONNECT_SECRET: ${{ secrets.RS_CONNECT_SECRET }}
       run: |
-        rsconnect deploy shiny . --name ${{ secrets.RS_CONNECT_NAME }} --title shiny --force
+        rsconnect add --account ${{ secrets.RS_CONNECT_ACCOUNT }} --name ${{ secrets.RS_CONNECT_NAME }} --token ${{ secrets.RS_CONNECT_TOKEN }} --secret ${{ secrets.RS_CONNECT_SECRET }}
+        rsconnect deploy shiny . --name ${{ secrets.RS_CONNECT_NAME }} --title shiny
