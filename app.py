@@ -34,19 +34,20 @@ app_ui = ui.page_fluid(
         )
     ),
     ui.page_navbar(
-        ui.nav_panel('Explanation', 
-            ui.markdown('**More explanation will follow.**\
-                <br>Filmographies of Yad Vashem and the Cinematography of the Holocaust as well as a hand-curated dataset of genocide doucmentaries can be searched and graphed.\
-                <br>Coming soon: Semantic similarity searches (using trained vector libraries) will also be made available and custom graphing for these will allow for unique\
-                <br>data visualisations (e.g. clustering of film-vectors by genre, director, specific search terms, changes of vectors over time etc.).'\
-            )
-        ),
         ui.nav_panel('Instructions', 
             ui.markdown(
-                "**Instructions**:<br>You can search the tables for single words. If you want to search for two words in any or all table columns you can chain them together like so: hitler|himmler.\
+                "<br>You can search the tables for single words. If you want to search for two words in any or all table columns you can chain them together like so: hitler|himmler.\
                 <br>The search syntax follows Python's Regular Expressions. For more info on how to use regex for complex searches, see:<br>[Python regex](https://docs.python.org/3/howto/regex.html)\
-                \
+                <br>You can then plot your search results. For example, after a search you can plot an histogram of the different producing countries<br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/histogram.png\" alt=\"Histogram\" style=\"width:600%;max-width:900px;\"><br><br>\
+                <br>Or you can graph a scatterplot of the occurrences of multiple search terms over time with dots sized by total duration of the results in any given year<br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/scatter.png\" alt=\"Scatterplot\" style=\"width:600%;max-width:900px;\">\
                 " ## further info on vectors
+            )
+        ),
+        ui.nav_panel('Explanation', 
+            ui.markdown('<br>Filmographies of Yad Vashem and the Cinematography of the Holocaust as well as a hand-curated dataset of genocide doucmentaries can be searched and graphed.\
+                <br>Coming soon: Semantic similarity searches (using trained vector libraries) will also be made available and custom graphing for these will allow for unique\
+                <br>data visualisations (e.g. clustering of film-vectors by genre, director, specific search terms, changes of vectors over time etc.).\
+                <br>**More explanation will follow.**'\
             )
         ),
         ui.nav_panel('Hand-curated genocide documentary filmography',
@@ -74,7 +75,7 @@ app_ui = ui.page_fluid(
         ),       
 
         id='active_nav',
-        title='Explore and Chart Production Data of Documentaries on the Holocaust and Genocide',
+        title='Explore and Chart Production Data of Films on the Holocaust and Genocide',
         collapsible=True,
         position='fixed-top'
     ), theme=theme.cyborg
@@ -156,7 +157,7 @@ def server(input, output, session):
         x_col = input.x_input()
         xtype = df[x_col].dtypes
         template = 'seaborn'
-        logging.debug(f'plotting search with choice {plot_type}')
+        logging.debug(f'plotting search with choice {plot_type} and search input {input.search_term()}')
 
         # configure df when a categorical data column has been used for numerical axes
         if plot_type in ('line', 'heatmap'):
