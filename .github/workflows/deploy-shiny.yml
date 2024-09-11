@@ -16,17 +16,24 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
+
+    - name: Install setuptools and wheel
+      run: |
+        python -m pip install --upgrade pip setuptools wheel
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
         pip install -r requirements.txt
 
-    - name: Deploy to ShinyApps.io
-      env:
-        RS_CONNECT_TOKEN: ${{ secrets.RS_CONNECT_TOKEN }}
-        RS_CONNECT_SECRET: ${{ secrets.RS_CONNECT_SECRET }}
+    - name: Install rsconnect-python
       run: |
         pip install rsconnect-python
-        rsconnect deploy shiny --name jackewiebohne --title shiny
+
+    - name: Add rsconnect account
+      run: |
+        rsconnect add --account ${{ secrets.RS_CONNECT_ACCOUNT }} --name ${{ secrets.RS_CONNECT_NAME }} --token ${{ secrets.RS_CONNECT_TOKEN }} --secret ${{ secrets.RS_CONNECT_SECRET }}
+
+    - name: Deploy to ShinyApps.io
+      run: |
+        rsconnect deploy shiny . --name ${{ secrets.RS_CONNECT_NAME }} --title shiny
