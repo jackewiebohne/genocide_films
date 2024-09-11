@@ -36,4 +36,4 @@ jobs:
 
     - name: Deploy to ShinyApps.io
       run: |
-        rsconnect deploy shiny . --name ${{ secrets.RS_CONNECT_NAME }} --title shiny
+        rsconnect deploy shiny . --name ${{ secrets.RS_CONNECT_NAME }} --title shiny --force
