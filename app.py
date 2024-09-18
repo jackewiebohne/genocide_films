@@ -36,10 +36,16 @@ app_ui = ui.page_fluid(
     ui.page_navbar(
         ui.nav_panel('Instructions', 
             ui.markdown(
-                "<br>You can search the tables for single words. If you want to search for two words in any or all table columns you can chain them together like so: hitler|himmler.\
-                <br>The search syntax follows Python's Regular Expressions. For more info on how to use regex for complex searches, see:<br>[Python regex](https://docs.python.org/3/howto/regex.html)\
-                <br>You can then plot your search results. For example, after a search you can plot an histogram of the different producing countries<br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/histogram.png\" alt=\"Histogram\" style=\"width:600%;max-width:900px;\"><br><br>\
-                <br>Or you can graph a scatterplot of the occurrences of multiple search terms over time with dots sized by total duration of the results in any given year<br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/scatter.png\" alt=\"Scatterplot\" style=\"width:600%;max-width:900px;\">\
+                "<br>Load a dataset of your choice in the above panel. You can then execute a search. If you want to search for two or more words\
+                <br>in any or all table columns you can chain them together like so: hitler|himmler.\
+                <br>The search syntax follows Python's Regular Expressions. For more info on how to use regex for complex searches, see:\
+                <br>[Python regex](https://docs.python.org/3/howto/regex.html)\
+                <br>After the search, you can click on \"Graph Search Output\" and plot your search results. For example, after a search you can plot an histogram of\
+                <br>the different producing countries:\
+                <br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/histogram.png\" alt=\"Histogram\" style=\"width:100%;max-width:900px;\"><br><br>\
+                <br>Or you can graph a scatterplot of the occurrences of multiple search terms over time with dots sized by total duration of the results in any given year\
+                <br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/scatter.png\" alt=\"Scatterplot\" style=\"width:100%;max-width:900px;\">\
+                <br><br><br><br><br>This project was funded by the European Commission as part of Horizon 2020, Grant number: 101025897\
                 " ## further info on vectors
             )
         ),
