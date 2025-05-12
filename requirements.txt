@@ -5,3 +5,4 @@ plotly==5.23.0
 shiny==1.0.0
 shinyswatch==0.7.0
 shinywidgets==0.3.3
+pyarrow==17.0.0
