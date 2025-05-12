@@ -107,8 +107,9 @@ def server(input, output, session):
         raise RuntimeError("FIREBASE_KEY not set in environment")
     with open(key_str) as f:
         key_dict = json.load(f)
-    cred = credentials.Certificate(key_dict)
-    firebase_admin.initialize_app(cred)
+    if not firebase_admin._apps:
+        cred = credentials.Certificate(key_dict)
+        firebase_admin.initialize_app(cred)
     db = firestore.client()
 
     # Initialize reactive values for dataframe and searches
