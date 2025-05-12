@@ -30,9 +30,11 @@ jobs:
       run: |
         pip install rsconnect-python
 
-    - name: Retrieve Firebase key and write to app folder
+    - name: Write Firebase key from secret to file
       run: |
-        echo "$FIREBASE_KEY" > ./firebase_key.json
+        echo "$FIREBASE_KEY" | jq '.' > firebase_key.json
+      env:
+        FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
         
     - name: Delete existing app
       env:
