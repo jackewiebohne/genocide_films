@@ -29,7 +29,7 @@ def mycorp_ui(cur_df, filtered_df, search_performed):
     if not isinstance(cur_df()['mycorp'], DataFrame): # it would be a mycorp class instance if not df
         df_dur_max = cur_df()['mycorp'].df.DURATION.max()
     else: 
-        cur_df().update({'mycorp': mycorp_handler('https://raw.githubusercontent.com/jackewiebohne/genocide_films/main/data/genocide_corpus.tsv')})
+        cur_df().update({'mycorp': mycorp_handler('https://raw.githubusercontent.com/jackewiebohne/genocide_films/main/data/genocide_corpus.parquet')})
         cur_df.set(cur_df())
         df_dur_max = cur_df()['mycorp'].df.DURATION.max()
 

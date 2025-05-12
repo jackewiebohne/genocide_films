@@ -5,11 +5,14 @@ import plotly.express as px
 from shinywidgets import output_widget, render_widget 
 from shinyswatch import theme
 
+import firebase_admin
+from firebase_admin import credentials, firestore
+from datetime import datetime
 
 from pandas.api.types import is_numeric_dtype, is_object_dtype
 from mycorp_server import mycorp_ui
 from yvcdh_server import yvcdh_ui
-import logging
+import logging, json, os
 logging.basicConfig(level=logging.DEBUG)
 
 ### TODO
@@ -46,14 +49,21 @@ app_ui = ui.page_fluid(
                 <br>Or you can graph a scatterplot of the occurrences of multiple search terms over time with dots sized by total duration of the results in any given year\
                 <br><br><img src=\"https://github.com/jackewiebohne/genocide_films/raw/main/img/scatter.png\" alt=\"Scatterplot\" style=\"width:100%;max-width:900px;\">\
                 <br><br><br><br><br>This project was funded by the European Commission as part of Horizon 2020, Grant number: 101025897\
-                " ## further info on vectors
+                "
             )
         ),
         ui.nav_panel('Explanation', 
-            ui.markdown('<br>Filmographies of Yad Vashem and the Cinematography of the Holocaust as well as a hand-curated dataset of genocide doucmentaries can be searched and graphed.\
-                <br>Coming soon: Semantic similarity searches (using trained vector libraries) will also be made available and custom graphing for these will allow for unique\
-                <br>data visualisations (e.g. clustering of film-vectors by genre, director, specific search terms, changes of vectors over time etc.).\
-                <br>**More explanation will follow.**'\
+            ui.markdown('<br>Filmographies of Yad Vashem (as of Oct 2, 2024) and the Cinematography of the Holocaust (up to date, discontinued filmography) \
+                        <br>as well as a hand-curated dataset of genocide documentaries can be searched and graphed.\
+                        <br>The hand-curated dataset of genocide documentaries was compiled as part of my EU-funded Marie Curie postdoc.\
+                        <br>For some of the peer-reviewed research published as part of this project see:\
+                        <br> <p style="text-indent: 2em;">[Mass Death, Population Decline, and Deprivation: A Capability Approach, Journal of Genocide Research, 2024](https://doi.org/10.1080/14623528.2024.2388413)</p>\
+                        <br> <p style="text-indent: 2em;">[The Ethics of Representing Perpetrators in Documentaries on Genocide, European Journal of Cultural Studies, 2023](https://doi.org/10.5281/zenodo.11521854)</p>\
+                        <br> <p style="text-indent: 2em;">[Perpetrating Narrative: The Ethics of Unreliable Narration in The Act of Killing, Quarterly Review of Film and Video, 2022](https://doi.org/10.5281/zenodo.11521785)</p>\
+                        <br> <p style="text-indent: 2em;">[The Truth of Reenactments: Reliving, Reconstructing, and Contesting History in Documentaries on Genocide, Studies in Documentary Film, 2023](https://doi.org/10.5281/zenodo.11521757)</p>\
+                        <br>For a rigorous online history of the seven genocides covered by the hand-curated data: [History of Seven Genocides](https://jackewiebohne.github.io/seven_genocides_history/)\
+                        <br>Coming soon: Semantic similarity searches (using trained vector libraries) will also be made available and custom graphing for these will allow for unique\
+                        <br>data visualisations (e.g. clustering of film-vectors by genre, director, specific search terms, changes of vectors over time etc.).'
             )
         ),
         ui.nav_panel('Hand-curated genocide documentary filmography',
@@ -65,6 +75,7 @@ app_ui = ui.page_fluid(
             ui.output_ui('yvcdh_ui_output'),
             value='yvcdh',
         ),
+        
         ui.nav_panel('Graph Search Output',
             ui.layout_sidebar(
                 ui.sidebar(
@@ -89,10 +100,28 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
+    # Initialize firebase vars
+    key_str = os.getenv("FIREBASE_KEY") # FIREBASE_KEY from environment secrets
+    if not key_str:
+        raise RuntimeError("FIREBASE_KEY not set in environment")
+    key_dict = json.loads(key_str)
+    cred = credentials.Certificate(key_dict)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
 
+    # Initialize reactive values for dataframe and searches
     cur_df = reactive.Value({'mycorp':pd.DataFrame(), 'yvcdh':pd.DataFrame()})
     filtered_df = reactive.Value(pd.DataFrame())
     search_performed = reactive.Value(False)
+
+    def write_to_firebase(dictionary):
+        """
+        Adds a dictionary to the 'search' collection in the Firestore database.
+        Args:
+            dictionary (dict): The data to be added to Firestore.
+        """
+        db.collection("search").add(dictionary)
+        logging.debug(f"search data written to firebase")
 
     @output
     @render.ui
@@ -106,12 +135,16 @@ def server(input, output, session):
     @reactive.event(input.active_nav)
     def mycorp_ui_output():
         logging.debug(f'rendering mycorp')
-        return mycorp_ui(cur_df, filtered_df, search_performed) 
+        return mycorp_ui(cur_df, filtered_df, search_performed)
+    
+    
 
     @reactive.effect
     @reactive.event(input.search)
     @reactive.event(input.active_nav)
     def perform_search():
+        # needs to reflect vector search as well
+        
         active_nav = input.active_nav()
         logging.debug(f'performing search on {cur_df()[active_nav].__name__}')
         search_term = input.search_term()
@@ -131,6 +164,17 @@ def server(input, output, session):
             case=case_sensitive
         )
         
+        write_to_firebase({
+            'search_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'search_term': search_term,
+            'search_column': search_column,
+            'date_range': (min(dates), max(dates)),
+            'duration_range': (min(duration), max(duration)),
+            'case_sensitive': case_sensitive,
+            'search_df_name': active_nav,
+            'number result rows': len(result)
+            })
+        
         filtered_df.set(result)
         search_performed.set(True)
         search_df_name =  'mycorp' if 'DATE' in filtered_df().columns else 'yvcdh'
@@ -141,6 +185,8 @@ def server(input, output, session):
     @render_widget
     @reactive.event(input.plot_button)
     def plot():
+
+        # accept vector search. if vector search is performed the vector handler will return a ready-made fig
 
         df = filtered_df()
         if df.empty:
@@ -195,7 +241,7 @@ def server(input, output, session):
             if plot_type == 'stacked':
                 title = f'Graph of {x_col} and {y_col} for search-input {input.search_term()} from {input.dates()[0]} to {input.dates()[1]}'
 
-                if z_col!='none':
+                if z_col != 'none':
 
                     if is_object_dtype(xtype):
                         df = df.groupby([y_col, z_col])[x_col].size().reset_index(name='num_' + str(x_col))
@@ -309,10 +355,6 @@ def server(input, output, session):
                         ]
         else: return ui.markdown('Perform a Search First')
 
-
-    ## TODO!
-    def download_search_data():
-        pass
 
 
 app = App(app_ui, server)

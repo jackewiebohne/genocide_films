@@ -10,9 +10,9 @@ class yvcdh_handler():
         self.timeaxis = 'year'
         self.numeric_axes = ['year', 'duration']
         self.datapath = datapath
-        self.df = pd.read_csv(self.datapath, sep='\t')
+        self.df = pd.read_parquet(self.datapath)
         self.strcols = 'summary title producer country genre color language distributor further_production_info director other_title'.split()\
-                                                                                                                     + ['production company', 'data_source']
+                        + ['production company', 'data_source']
         self.df.year = pd.to_numeric(self.df.year, errors='coerce')
         self.df.duration = pd.to_numeric(self.df.duration, errors='coerce')
 

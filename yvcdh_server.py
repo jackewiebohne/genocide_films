@@ -28,7 +28,7 @@ def yvcdh_ui(cur_df, filtered_df, search_performed):
     if not isinstance(cur_df()['yvcdh'], DataFrame): 
         df_dur_max = cur_df()['yvcdh'].df.duration.max()
     else:
-        cur_df().update({'yvcdh': yvcdh_handler('https://raw.githubusercontent.com/jackewiebohne/genocide_films/main/data/yad_vashem_CdH_joint.tsv')})
+        cur_df().update({'yvcdh': yvcdh_handler('https://raw.githubusercontent.com/jackewiebohne/genocide_films/main/data/yad_vashem_CdH_joint.parquet')})
         cur_df.set(cur_df())
         df_dur_max = cur_df()['yvcdh'].df.duration.max()
 

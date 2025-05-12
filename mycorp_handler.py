@@ -8,7 +8,7 @@ class mycorp_handler():
         self.timeaxis ='DATE'
         self.numeric_axes = ['DATE', 'DURATION']
         self.datapath = datapath
-        self.df = pd.read_csv(self.datapath, sep='\t')
+        self.df = pd.read_parquet(self.datapath)
         self.df.drop(columns=['DATA STATE', 'ACQUIRED', 'DOC TYPE'], inplace=True)
         self.df.rename(columns={'ATROCITY, GENOCIDE': 'ATROCITY', 'PERP GENDER': 'PERP_REPRESENTED_GENDER', 
                                 'PERP REPR': 'PERP_REPRESENTATION', 'PERP GROUPS': 'PERP_GROUPS', 'COLLABORATOR GROUPS': 'COLLABORATOR_GROUPS',
