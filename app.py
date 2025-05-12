@@ -105,7 +105,8 @@ def server(input, output, session):
     # key_str = os.getenv("FIREBASE_KEY") # FIREBASE_KEY from environment secrets for local testing
     if not key_str:
         raise RuntimeError("FIREBASE_KEY not set in environment")
-    key_dict = json.loads(key_str)
+    with open(key_str) as f:
+        key_dict = json.loads(f)
     cred = credentials.Certificate(key_dict)
     firebase_admin.initialize_app(cred)
     db = firestore.client()
