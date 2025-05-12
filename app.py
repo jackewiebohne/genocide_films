@@ -101,7 +101,8 @@ app_ui = ui.page_fluid(
 
 def server(input, output, session):
     # Initialize firebase vars
-    key_str = os.getenv("FIREBASE_KEY") # FIREBASE_KEY from environment secrets
+    key_str = "firebase_key.json"
+    # key_str = os.getenv("FIREBASE_KEY") # FIREBASE_KEY from environment secrets for local testing
     if not key_str:
         raise RuntimeError("FIREBASE_KEY not set in environment")
     key_dict = json.loads(key_str)

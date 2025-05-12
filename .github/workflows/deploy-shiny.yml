@@ -30,7 +30,7 @@ jobs:
       run: |
         pip install rsconnect-python
 
-    - name: Retrieve Firebase key
+    - name: Retrieve Firebase key and pass on as temp json file
       run: |
         echo "$FIREBASE_KEY" > firebase_key.json
       env:
